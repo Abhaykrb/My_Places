@@ -1,0 +1,127 @@
+{% load static %}
+
+
+<!--To load leaflet links-->
+{% load leaflet_tags%}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Myplaces</title>
+
+  <!--Leaflet and circleclusterMarker  and css and js links respectively,but leaflet link should be ahead than circleclusterMarker-->
+  <link rel="stylesheet" type="text/css" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+  <link rel="stylesheet" type="text/css"
+    href="http://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/MarkerCluster.css" />
+  <link rel="stylesheet" type="text/css"
+    href="http://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/MarkerCluster.Default.css" />
+
+  <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js'></script>
+  <script type='text/javascript' src='http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js'></script>
+  <script type='text/javascript'
+    src='http://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/leaflet.markercluster.js'></script>
+
+
+  <!--To load cordinates from database-->
+  <script src="{% static 'leaflet.ajax.js' %}"></script>
+  <link rel="stylesheet" type="text/css" href="{% static 'styleMyplaces.css' %}">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+</head>
+
+<body>
+  <div id="map"></div>
+  <div class="sidebar">
+    <p style="text-align:center; font-size: 24px; color:#175B81; font-weight:bold; "><span
+        id="sport">visitedPlaces</span></p>
+
+    <table style="width:90%; ">
+      <tr>
+        <td id='pict' ALIGN='center' ;> </td>
+      </tr>
+    </table></br>
+
+    <table style="width:90%">
+      <tr>
+        <th align="left">Name</th>
+        <td id='f1'></td>
+      </tr>
+      <tr>
+        <th align="left">Amount</th>
+        <td id='f2'></td>
+      </tr>
+      <tr>
+        <th align="left">Description</th>
+        <td id='f3'></td>
+      </tr>
+    </table>
+  </div>
+
+  <script>
+    let mymap = L.map('map', {
+      center: [28.394, 84.1240],  //map is zoomed directly to given  cordinate [28.394, 84.1240]
+      zoom: 7                     //this is cool hai guys
+    });
+    L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', //osm tile layer and copyright are generated
+      maxZoom: 18,
+      id: 'mapbox.streets',
+
+    }).addTo(mymap);
+
+    var markerVisited = L.markerClusterGroup()
+    var markerToVisit = L.markerClusterGroup()
+
+    function onEachFeature(feature, layer) {
+      layer.bindPopup(feature.properties.name);
+      layer.on('click', function (e) {
+        //place attributes in panel table.
+        $('#sport').html('VisitedPlaces');
+        $('#pict').html('<img src=" images/' + e.target.feature.properties.img + ' " >');
+        $('#f1').html(e.target.feature.properties.name);
+        $('#f2').html(e.target.feature.properties.date);
+        $('#f3').html(e.target.feature.properties.des);
+      });
+    }
+
+    function onEachFeat(feature, layer) {
+      layer.bindPopup(feature.properties.naame);
+      layer.on('click', function (e) {
+        //place attributes in panel table.
+        $('#sport').html('ToVisit');
+        $('#pict').html('<img src=" images/' + e.target.feature.properties.img + ' " >');
+        $('#f1').html(e.target.feature.properties.naame);
+        $('#f2').html(e.target.feature.properties.date);
+        $('#f3').html(e.target.feature.properties.des);
+      });
+    }
+
+    var visitedPlaces = new L.GeoJSON.AJAX("{% url 'visited' %}", {
+      onEachFeature: onEachFeature,
+    });
+    var toVisitPlaces = new L.GeoJSON.AJAX("{% url 'tovisit' %}", {
+      onEachFeature: onEachFeat,
+    });
+
+    visitedPlaces.on('data:loaded', function () {
+      // Add the cluster data after the geojson layer has loaded.
+      markerVisited.addLayer(visitedPlaces);
+      mymap.addLayer(markerVisited);
+    })
+
+    toVisitPlaces.on('data:loaded', function () {
+      // Add the cluster data after the geojson layer has loaded.
+      markerToVisit.addLayer(toVisitPlaces);
+    })
+
+    var baseLayers = {
+      "Visited": markerVisited,
+      "ToVisit": markerToVisit
+    };
+    L.control.layers(baseLayers).addTo(mymap);
+  </script>
+</body>
+
+</html>
